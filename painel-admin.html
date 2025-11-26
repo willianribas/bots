@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InControl - Painel Administrativo VPS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/3.9.1/chart.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Personalizar navegação por abas */
+        .nav-tab {
+            @apply px-4 py-2 rounded-t-lg text-sm font-medium cursor-pointer transition-colors;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .nav-tab:hover:not(.active) {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .nav-tab.active {
+            @apply bg-gray-700 text-white;
+            background-color: #374151;
+        }
+
+        /* Container de conteúdo */
+        .tab-content {
+            @apply p-6;
+        }
+
+        .tab-content.hidden {
+            @apply hidden;
+        }
+
+        /* Terminal style */
+        .terminal-area {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            color: #e0e0e0;
+        }
+
+        .terminal-input:focus {
+            outline: none;
+        }
+
+        .file-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .log-entry {
+            transition: background-color 0.2s;
+        }
+
+        .log-entry:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-purple-600 p-4 shadow-lg">
+        <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <div class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-robot text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-white">InControl Pro</h1>
+                    <p class="text-blue-100 text-sm">Painel de Controle VPS & Bots</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <!-- Status Global -->
+                <div class="flex items-center space-x-2">
+                    <div class="flex items-center space-x-2">
+                        <span class="relative">
+                            <i class="fas fa-server text-green-300"></i>
+                            <span class="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                        </span>
+                        <span class="text-white text-sm hidden sm:block">VPS Online</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="relative">
+                            <i class="fas fa-robot text-blue-300"></i>
+                            <span class="absolute -top-1 -right-1 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
+                        </span>
+                        <span class="text-white text-sm hidden sm:block" id="botsOnlineCount">2 Bots</span>
+                    </div>
+                </div>
+
+                <!-- Botões Header -->
+                <button id="refreshBtn" class="bg-white bg-opacity-10 hover:bg-opacity-20 px-4 py-2 rounded-lg text-white transition-colors hidden sm:flex items-center">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    <span class="hidden md:block">Atualizar</span>
+                </button>
+
+                <button id="settingsBtn" class="bg-white bg-opacity-10 hover:bg-opacity-20 p-3 rounded-lg text-white transition-colors" title="Configurações">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Navegação Abas -->
+        <nav class="mt-4">
+            <div class="flex space-x-1 overflow-x-auto">
+                <button id="tabDashboard" class="nav-tab active" data-tab="dashboard">
+                    <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                </button>
+                <button id="tabBots" class="nav-tab" data-tab="bots">
+                    <i class="fas fa-robot mr-2"></i>Bots
+                </button>
+                <button id="tabSystem" class="nav-tab" data-tab="system">
+                    <i class="fas fa-server mr-2"></i>Sistema
+                </button>
+                <button id="tabTerminal" class="nav-tab" data-tab="terminal">
+                    <i class="fas fa-terminal mr-2"></i>Terminal
+                </button>
+                <button id="tabFiles" class="nav-tab" data-tab="files">
+                    <i class="fas fa-folder mr-2"></i>Arquivos
+                </button>
+                <button id="tabLogs" class="nav-tab" data-tab="logs">
+                    <i class="fas fa-file-alt mr-2"></i>Logs
+                </button>
+                <button id="tabAlerts" class="nav-tab" data-tab="alerts">
+                    <i class="fas fa-bell mr-2"></i>Alertas
+                    <span class="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full hidden" id="alertBadge">0</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="p-6 max-w-7xl mx-auto">
+        <!-- Status Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <!-- VPS Status -->
+            <div class="bg-gray-800 rounded-lg p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-300">VPS Status</h3>
+                        <p class="text-2xl font-bold text-green-400">Online</p>
+                    </div>
+                    <i class="fas fa-server text-4xl text-blue-400"></i>
+                </div>
+            </div>
+
+            <!-- CPU Usage -->
+            <div class="bg-gray-800 rounded-lg p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-300">CPU</h3>
+                        <p id="cpuUsage" class="text-2xl font-bold text-blue-400">8.5%</p>
+                    </div>
+                    <i class="fas fa-microchip text-4xl text-green-400"></i>
+                </div>
+                <div class="mt-2 bg-gray-700 rounded-full h-2">
+                    <div id="cpuBar" class="bg-blue-500 h-2 rounded-full" style="width: 8.5%"></div>
+                </div>
+            </div>
+
+            <!-- RAM Usage -->
+            <div class="bg-gray-800 rounded-lg p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-300">RAM</h3>
+                        <p id="ramUsage" class="text-2xl font-bold text-green-400">32%</p>
+                    </div>
+                    <i class="fas fa-memory text-4xl text-purple-400"></i>
+                </div>
+                <div class="mt-2 bg-gray-700 rounded-full h-2">
+                    <div id="ramBar" class="bg-green-500 h-2 rounded-full" style="width: 32%"></div>
+                </div>
+            </div>
+
+            <!-- Bots Active -->
+            <div class="bg-gray-800 rounded-lg p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-300">Bots Ativos</h3>
+                        <p id="botsActive" class="text-2xl font-bold text-yellow-400">1</p>
+                    </div>
+                    <i class="fas fa-robot text-4xl text-yellow-400"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Bot Control Panel -->
+            <div class="lg:col-span-2">
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-robot mr-2 text-blue-400"></i>
+                        Controle dos Bots
+                    </h2>
+
+                    <!-- GETS Monitor Bot -->
+                    <div class="border border-gray-700 rounded-lg p-4 mb-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-lg font-medium text-gray-200">🎯 Bot Monitor GETS</h3>
+                            <span id="getsStatus" class="px-3 py-1 rounded-full text-sm bg-green-500 bg-opacity-20 text-green-400">
+                                <i class="fas fa-circle mr-1"></i>Online
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+                            <button id="startGetsBtn" class="bg-green-600 hover:bg-green-500 px-3 py-2 rounded text-sm font-medium transition-colors">
+                                <i class="fas fa-play mr-1"></i>Iniciar
+                            </button>
+                            <button id="stopGetsBtn" class="bg-red-600 hover:bg-red-500 px-3 py-2 rounded text-sm font-medium transition-colors">
+                                <i class="fas fa-stop mr-1"></i>Parar
+                            </button>
+                            <button id="restartGetsBtn" class="bg-yellow-600 hover:bg-yellow-500 px-3 py-2 rounded text-sm font-medium transition-colors">
+                                <i class="fas fa-redo mr-1"></i>Reiniciar
+                            </button>
+                            <button id="statusGetsBtn" class="bg-blue-600 hover:bg-blue-500 px-3 py-2 rounded text-sm font-medium transition-colors">
+                                <i class="fas fa-info-circle mr-1"></i>Status
+                            </button>
+                        </div>
+
+                        <div id="getsDetails" class="bg-gray-700 rounded p-3 text-sm text-gray-300">
+                            <div class="mb-2">
+                                <span class="font-medium">Último heartbeat:</span>
+                                <span id="getsLastHeartbeat" class="text-green-400">26/11/2025, 11:47:41</span>
+                            </div>
+                            <div class="mb-2">
+                                <span class="font-medium">OS no cache:</span>
+                                <span id="getsCacheSize" class="text-blue-400">42</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">Ciclo atual:</span>
+                                <span id="getsCurrentCycle" class="text-purple-400">OK</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Telegram Control Bot -->
+                    <div class="border border-gray-700 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-lg font-medium text-gray-200">📱 Bot Telegram</h3>
+                            <span class="px-3 py-1 rounded-full text-sm bg-green-500 bg-opacity-20 text-green-400">
+                                <i class="fas fa-circle mr-1"></i>Ativo
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 mb-4">
+                            <button id="telegramStatsBtn" class="bg-purple-600 hover:bg-purple-500 px-3 py-2 rounded text-sm font-medium transition-colors">
+                                <i class="fas fa-chart-bar mr-1"></i>Estatísticas
+                            </button>
+                            <button id="telegramLogsBtn" class="bg-gray-600 hover:bg-gray-500 px-3 py-2 rounded text-sm font-medium transition-colors">
+                                <i class="fas fa-file-alt mr-1"></i>Logs Recentes
+                            </button>
+                        </div>
+
+                        <div class="bg-gray-700 rounded p-3 text-sm text-gray-300">
+                            <div class="mb-2">
+                                <span class="font-medium">Mensagens hoje:</span>
+                                <span class="text-blue-400">15</span>
+                            </div>
+                            <div>
+                                <span class="font-medium">Comandos executados:</span>
+                                <span class="text-green-400">3</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Stats -->
+            <div>
+                <!-- Performance Chart -->
+                <div class="bg-gray-800 rounded-lg p-6 mb-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-chart-line mr-2 text-green-400"></i>
+                        Performance VPS
+                    </h2>
+                    <canvas id="performanceChart" height="200"></canvas>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="bg-gray-800 rounded-lg p-6">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center">
+                        <i class="fas fa-history mr-2 text-orange-400"></i>
+                        Atividades Recentes
+                    </h2>
+                    <div class="space-y-3 max-h-80 overflow-y-auto">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-300">Bot GETS iniciado com sucesso</p>
+                                <p class="text-xs text-gray-500">26/11/2025, 11:47:41</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-300">Cache limpo automaticamente</p>
+                                <p class="text-xs text-gray-500">26/11/2025, 11:47:58</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-300">Erro de conectividade recuperado</p>
+                                <p class="text-xs text-gray-500">26/11/2025, 10:58:14</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GETS Statistics -->
+        <div class="mt-8 bg-gray-800 rounded-lg p-6">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-chart-pie mr-2 text-blue-400"></i>
+                Estatísticas GETS
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-blue-400" id="totalOS">47</p>
+                    <p class="text-sm text-gray-400">OS Totais</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-green-400" id="osAtivas">23</p>
+                    <p class="text-sm text-gray-400">OS Ativas</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-red-400" id="osCriticas">3</p>
+                    <p class="text-sm text-gray-400">OS Críticas</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-2xl font-bold text-purple-400" id="tempoMedio">12.5</p>
+                    <p class="text-sm text-gray-400">Dias Médios</p>
+                </div>
+            </div>
+        <canvas id="osChart" height="150"></canvas>
+        </div>
+    </main>
+
+    <!-- Abas Adicionais (Ocultas por padrão) -->
+
+    <!-- Aba System -->
+    <div id="tab-system" class="tab-content hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-server mr-2 text-blue-400"></i>Sistema VPS
+                </h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between">
+                        <span>Uptime:</span>
+                        <span id="systemUptime" class="text-green-400">5d 12h 30m</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>SO:</span>
+                        <span id="systemOS" class="text-gray-300">Ubuntu 22.04.1 LTS</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>CPU:</span>
+                        <span id="systemCPU" class="text-gray-300">AMD EPYC 7282</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>RAM Total:</span>
+                        <span id="systemRamTotal" class="text-gray-300">4GB</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Disco Usado:</span>
+                        <span id="systemDiskUsed" class="text-gray-300">15.2GB/40GB</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>IP Público:</span>
+                        <span id="systemIP" class="text-blue-400">192.168.1.100</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-network-wired mr-2 text-purple-400"></i>Rede VPS
+                </h2>
+                <div class="space-y-4">
+                    <div class="flex justify-between">
+                        <span>Pacotes Recebidos:</span>
+                        <span class="text-green-400">142.5K</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Pacotes Enviados:</span>
+                        <span class="text-blue-400">96.8K</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Latência avg:</span>
+                        <span class="text-yellow-400">23ms</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Banda Larga:</span>
+                        <span class="text-gray-300">1Gbps</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 bg-gray-800 rounded-lg p-6">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-shield-alt mr-2 text-red-400"></i>Segurança VPS
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center p-4 border border-gray-700 rounded">
+                    <i class="fas fa-lock text-3xl text-green-400 mb-2"></i>
+                    <h3 class="font-semibold">Firewall UFW</h3>
+                    <p class="text-gray-400 text-sm">Ativo</p>
+                </div>
+                <div class="text-center p-4 border border-gray-700 rounded">
+                    <i class="fas fa-user-shield text-3xl text-blue-400 mb-2"></i>
+                    <h3 class="font-semibold">Fail2Ban</h3>
+                    <p class="text-gray-400 text-sm">12 tentativas bloqueadas</p>
+                </div>
+                <div class="text-center p-4 border border-gray-700 rounded">
+                    <i class="fas fa-clock text-3xl text-yellow-400 mb-2"></i>
+                    <h3 class="font-semibold">Últimas Backups</h3>
+                    <p class="text-gray-400 text-sm">Ontem 02:00</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aba Terminal -->
+    <div id="tab-terminal" class="tab-content hidden">
+        <div class="bg-gray-800 rounded-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold flex items-center">
+                    <i class="fas fa-terminal mr-2 text-green-400"></i>Terminal VPS
+                </h2>
+                <button class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-sm font-medium transition-colors">
+                    <i class="fas fa-plug mr-1"></i>Conectar
+                </button>
+            </div>
+
+            <div class="terminal-area p-4 rounded mb-4 h-96 overflow-y-auto" id="terminalContent">
+                [InControl Terminal v1.0]<br>
+                Conectado ao servidor Ubuntu 22.04...<br>
+                Digite comandos Linux ou selecione ações rápidas.<br><br>
+                <span class="text-green-400">root@ubuntu:~# </span>
+            </div>
+
+            <div class="flex space-x-2">
+                <input type="text" id="terminalInput" placeholder="Digite comando Linux..."
+                       class="flex-1 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white terminal-input">
+                <button id="sendCommandBtn" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+
+            <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+                <button class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm">htop</button>
+                <button class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm">df -h</button>
+                <button class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm">free -h</button>
+                <button class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm">pm2 list</button>
+                <button class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm">tail -f log</button>
+                <button class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm">uptime</button>
+                <button class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm">who</button>
+                <button class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded text-sm">w</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aba Files -->
+    <div id="tab-files" class="tab-content hidden">
+        <div class="bg-gray-800 rounded-lg p-6">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-folder mr-2 text-blue-400"></i>Gerenciador de Arquivos
+            </h2>
+
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center space-x-2">
+                    <button class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm">
+                        <i class="fas fa-arrow-up mr-1"></i>Voltar
+                    </button>
+                    <span id="currentPath" class="text-gray-300">/home/incontrol/</span>
+                </div>
+                <div class="flex space-x-2">
+                    <input type="text" id="searchFiles" placeholder="Buscar arquivos..."
+                           class="bg-gray-700 border border-gray-600 rounded px-3 py-1 text-sm">
+                    <button class="bg-green-600 hover:bg-green-500 px-3 py-1 rounded text-sm">
+                        <i class="fas fa-plus mr-1"></i>Novo
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" id="filesList">
+                <!-- Arquivos serão carregados aqui dinamicamente -->
+            </div>
+
+            <div class="mt-4 flex justify-between items-center text-sm text-gray-400">
+                <span id="filesInfo">0 arquivos, 0 pastas</span>
+                <span id="diskUsage">Uso do disco: 15.2GB / 40GB</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aba Logs -->
+    <div id="tab-logs" class="tab-content hidden">
+        <div class="bg-gray-800 rounded-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold flex items-center">
+                    <i class="fas fa-file-alt mr-2 text-yellow-400"></i>Logs do Sistema
+                </h2>
+                <div class="flex space-x-2">
+                    <select id="logFilter" class="bg-gray-700 border border-gray-600 rounded px-3 py-1 text-sm">
+                        <option value="all">Todos</option>
+                        <option value="error">Erros</option>
+                        <option value="warning">Avisos</option>
+                        <option value="info">Info</option>
+                        <option value="success">Sucesso</option>
+                    </select>
+                    <button id="clearLogsBtn" class="bg-red-600 hover:bg-red-500 px-3 py-1 rounded text-sm">
+                        <i class="fas fa-trash mr-1"></i>Limpar
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-2 max-h-96 overflow-y-auto" id="logsContainer">
+                <div class="log-entry flex items-center space-x-3 p-2 rounded bg-gray-700 bg-opacity-50">
+                    <span class="w-20 text-xs bg-green-500 bg-opacity-20 text-green-400 px-2 py-1 rounded">SUCCESS</span>
+                    <span class="text-sm text-gray-300">Bot GETS iniciado com sucesso</span>
+                    <span class="text-xs text-gray-500 ml-auto">11:47:41</span>
+                </div>
+
+                <div class="log-entry flex items-center space-x-3 p-2 rounded bg-gray-700 bg-opacity-50">
+                    <span class="w-20 text-xs bg-blue-500 bg-opacity-20 text-blue-400 px-2 py-1 rounded">INFO</span>
+                    <span class="text-sm text-gray-300">Cache automático executado</span>
+                    <span class="text-xs text-gray-500 ml-auto">11:47:58</span>
+                </div>
+
+                <div class="log-entry flex items-center space-x-3 p-2 rounded bg-gray-700 bg-opacity-50">
+                    <span class="w-20 text-xs bg-yellow-500 bg-opacity-20 text-yellow-400 px-2 py-1 rounded">WARNING</span>
+                    <span class="text-sm text-gray-300">Falha temporária de conectividade</span>
+                    <span class="text-xs text-gray-500 ml-auto">10:58:14</span>
+                </div>
+
+                <div class="log-entry flex items-center space-x-3 p-2 rounded bg-gray-700 bg-opacity-50">
+                    <span class="w-20 text-xs bg-red-500 bg-opacity-20 text-red-400 px-2 py-1 rounded">ERROR</span>
+                    <span class="text-sm text-gray-300">Erro no Telegram API - tentativas de recoverable</span>
+                    <span class="text-xs text-gray-500 ml-auto">10:58:14</span>
+                </div>
+            </div>
+
+            <div class="mt-4 flex justify-between items-center text-sm text-gray-400">
+                <span>Mostrando últimos 100 logs</span>
+                <span>Última atualização: há 2 minutos</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aba Alerts -->
+    <div id="tab-alerts" class="tab-content hidden">
+        <div class="space-y-4">
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-bell mr-2 text-red-400"></i>Sistema de Alertas
+                </h2>
+
+                <!-- Filtros de Alertas -->
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button class="alert-filter active px-3 py-1 rounded bg-red-600 text-white text-sm">Críticos</button>
+                    <button class="alert-filter px-3 py-1 rounded bg-gray-700 text-gray-300 text-sm">Avisos</button>
+                    <button class="alert-filter px-3 py-1 rounded bg-gray-700 text-gray-300 text-sm">Info</button>
+                </div>
+
+                <!-- Lista de Alertas -->
+                <div class="space-y-3" id="alertsContainer">
+                    <div class="border-l-4 border-red-500 bg-red-500 bg-opacity-10 p-4 rounded">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-semibold text-red-400">OS Crítica com Tempo Excessivo</h4>
+                            <span class="text-xs bg-red-500 text-white px-2 py-1 rounded">CRÍTICO</span>
+                        </div>
+                        <p class="text-gray-300 text-sm mt-1">OS 25.1234 ultrapassou 30 dias em SOS</p>
+                        <p class="text-gray-500 text-xs mt-1">26/11/2025, 08:30:15</p>
+                    </div>
+
+                    <div class="border-l-4 border-yellow-500 bg-yellow-500 bg-opacity-10 p-4 rounded">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-semibold text-yellow-400">Alto Uso de CPU</h4>
+                            <span class="text-xs bg-yellow-500 text-white px-2 py-1 rounded">AVISO</span>
+                        </div>
+                        <p class="text-gray-300 text-sm mt-1">CPU em 85% por mais de 5 minutos</p>
+                        <p class="text-gray-500 text-xs mt-1">26/11/2025, 11:45:22</p>
+                    </div>
+
+                    <div class="border-l-4 border-blue-500 bg-blue-500 bg-opacity-10 p-4 rounded">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-semibold text-blue-400">Backup Concluído</h4>
+                            <span class="text-xs bg-blue-500 text-white px-2 py-1 rounded">INFO</span>
+                        </div>
+                        <p class="text-gray-300 text-sm mt-1">Backup automático executado com sucesso</p>
+                        <p class="text-gray-500 text-xs mt-1">26/11/2025, 02:00:00</p>
+                    </div>
+                </div>
+
+                <!-- Configurações de Alertas -->
+                <div class="mt-6 border-t border-gray-700 pt-4">
+                    <h3 class="font-semibold mb-3">Configurações de Alertas</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" checked class="form-checkbox">
+                            <span class="text-sm">OS Críticas</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" checked class="form-checkbox">
+                            <span class="text-sm">Uso de Recursos</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" checked class="form-checkbox">
+                            <span class="text-sm">Falhas do Sistema</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" class="form-checkbox">
+                            <span class="text-sm">Backups</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+    <script src="painel-admin.js"></script>
+</body>
+</html>

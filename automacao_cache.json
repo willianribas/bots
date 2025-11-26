@@ -1,0 +1,125 @@
+{
+  "timestamp": 1764170600572,
+  "dados": {
+    "25.7498": {
+      "origem": "MC",
+      "numero_os": "25.7498",
+      "codigo_equipamento": "479504",
+      "descricao_equipamento": "VENTILADOR UTI|GE HEALTHCARE|CARESCAPE R-860",
+      "criticidade": "Sim",
+      "status": "AE",
+      "data_abertura": "2025-10-17T00:00:00.000Z",
+      "dias_aberta": 39,
+      "nome_executor": "",
+      "ultima_atualizacao": 1764170600090
+    },
+    "25.7946": {
+      "origem": "MP",
+      "numero_os": "25.7946",
+      "codigo_equipamento": "480482",
+      "descricao_equipamento": "ELETROCARDIOGRAFO|ALFAMED|COMPASSUS-3000",
+      "criticidade": "Não",
+      "status": "EE",
+      "data_abertura": "2025-11-26T00:00:00.000Z",
+      "dias_aberta": 0,
+      "nome_executor": "FABIO LEANDRO KESSLER ROSSI",
+      "ultima_atualizacao": 1764170600161
+    },
+    "25.7942": {
+      "origem": "MP",
+      "numero_os": "25.7942",
+      "codigo_equipamento": "480056",
+      "descricao_equipamento": "BERCO AQUECIDO|FANEM|AMPLA-2085",
+      "criticidade": "Sim",
+      "status": "ADE",
+      "data_abertura": "2025-11-26T00:00:00.000Z",
+      "dias_aberta": 0,
+      "nome_executor": "",
+      "ultima_atualizacao": 1764170600219
+    },
+    "25.7945": {
+      "origem": "MC",
+      "numero_os": "25.7945",
+      "codigo_equipamento": "470331",
+      "descricao_equipamento": "CAMA ELETRICA|LINET|1-SMA-7945",
+      "criticidade": "Não",
+      "status": "EE",
+      "data_abertura": "2025-11-26T00:00:00.000Z",
+      "dias_aberta": 0,
+      "nome_executor": "WILLIAM ALFLEN MAIA",
+      "ultima_atualizacao": 1764170600281
+    },
+    "25.7369": {
+      "origem": "MC",
+      "numero_os": "25.7369",
+      "codigo_equipamento": "10122915",
+      "descricao_equipamento": "LAVADORA US|BAUMER|E-0201 042",
+      "criticidade": "Não",
+      "status": "OSP",
+      "data_abertura": "2025-10-06T00:00:00.000Z",
+      "dias_aberta": 51,
+      "nome_executor": "",
+      "ultima_atualizacao": 1764170600350
+    },
+    "25.7943": {
+      "origem": "MC",
+      "numero_os": "25.7943",
+      "codigo_equipamento": "10123467",
+      "descricao_equipamento": "ELETROCARDIOGRAFO|LEPU MEDICAL|NEO ECG T-180",
+      "criticidade": "Não",
+      "status": "EE",
+      "data_abertura": "2025-11-26T00:00:00.000Z",
+      "dias_aberta": 0,
+      "nome_executor": "WILLIAM ALFLEN MAIA",
+      "ultima_atualizacao": 1764170600443
+    },
+    "25.7944": {
+      "origem": "MC",
+      "numero_os": "25.7944",
+      "codigo_equipamento": "481599",
+      "descricao_equipamento": "BISTURI ELETRONICO MONOPOLAR-BIPOLAR|WEM|SS-501-SX",
+      "criticidade": "Sim",
+      "status": "EE",
+      "data_abertura": "2025-11-26T00:00:00.000Z",
+      "dias_aberta": 0,
+      "nome_executor": "WILLIAM ALFLEN MAIA",
+      "ultima_atualizacao": 1764170600508
+    },
+    "25.7698": {
+      "origem": "MC",
+      "numero_os": "25.7698",
+      "codigo_equipamento": "ALU-01650",
+      "descricao_equipamento": "BOMBA INFUSAO USO GERAL|SAMTRONIC|ICATU S-3-ED",
+      "criticidade": "Não",
+      "status": "OSP",
+      "data_abertura": "2025-11-04T00:00:00.000Z",
+      "dias_aberta": 21,
+      "nome_executor": "",
+      "ultima_atualizacao": 1764170600572
+    },
+    "25.7947": {
+      "origem": "MC",
+      "numero_os": "25.7947",
+      "codigo_equipamento": "480643",
+      "descricao_equipamento": "MONITOR MULTIPARAMETRICO|MINDRAY|EPM-15",
+      "criticidade": "Não",
+      "status": "EE",
+      "data_abertura": "2025-11-26T00:00:00.000Z",
+      "dias_aberta": 0,
+      "nome_executor": "GETULIO ANTONIO RODRIGUES DE ALMEIDA",
+      "ultima_atualizacao": 1764170599992
+    },
+    "25.7948": {
+      "origem": "MC",
+      "numero_os": "25.7948",
+      "codigo_equipamento": "480620",
+      "descricao_equipamento": "MONITOR MULTIPARAMETRICO|MINDRAY|EPM-15",
+      "criticidade": "Não",
+      "status": "EE",
+      "data_abertura": "2025-11-26T00:00:00.000Z",
+      "dias_aberta": 0,
+      "nome_executor": "GETULIO ANTONIO RODRIGUES DE ALMEIDA",
+      "ultima_atualizacao": 1764170599935
+    }
+  }
+}

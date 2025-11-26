@@ -1,0 +1,49 @@
+Passos para configurar o Agendador de Tarefas do Windows:
+
+1. Abra o Agendador de Tarefas do Windows:
+   - Pressione Win + R, digite "taskschd.msc" e pressione Enter
+
+2. Clique em "Criar Tarefa Básica..." no painel direito
+
+3. Na janela "Criar Tarefa Básica":
+   - Nome: "Iniciar Automações GETS"
+   - Descrição: "Inicia o bot Telegram e automação GETS automaticamente"
+   - Clique em "Próximo"
+
+4. No passo "Gatilho":
+   - Selecione "Iniciar tarefa" > "Na inicialização"
+   - Clique em "Próximo"
+
+5. No passo "Ação":
+   - Selecione "Iniciar um programa"
+   - Clique em "Próximo"
+
+6. Na seção "Programa/script":
+   - Clique em "Procurar"
+   - Navegue até C:\Users\Usuario\Desktop\Projeto\automacao
+   - Selecione o arquivo "iniciar-automacoes.bat"
+   - Clique em "Abrir"
+
+7. Na seção "Adicionar argumentos" e "Iniciar em":
+   - Deixe em branco
+   - Clique em "Próximo"
+
+8. Na próxima aba "Concluir":
+   - Marque a opção "Abrir a caixa de diálogo Propriedades..."
+   - Clique em "Concluir"
+
+9. Na janela de propriedades:
+   - Vá para a aba "Geral"
+   - Marque "Executar com os privilégios mais altos" se necessário
+   - Vá para a aba "Condições"
+   - Desmarque todas as opções relacionadas a energia (para iniciar mesmo na bateria)
+
+10. Clique em "OK" para salvar a tarefa
+
+A tarefa será executada automaticamente na próxima inicialização do Windows.
+Para testar, você pode reiniciar o computador ou clicar com o botão direito na tarefa criada e selecionar "Executar".
+
+Observações importantes:
+- Certifique-se de que o caminho do arquivo .bat está correto
+- Verifique se o Node.js está instalado e acessível no PATH do sistema
+- Os logs serão gravados em automacao_gets.log no diretório da automação
