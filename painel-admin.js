@@ -9,73 +9,8 @@ class PainelAdmin {
         this.token = null;
         this.currentUser = null;
 
-    // Verificar autenticação antes de tudo
+        // Verificar autenticação antes de tudo
         this.checkAuthentication();
-    }
-
-    // ===== AUTENTICAÇÃO JWT =====
-    checkAuthentication() {
-        // Verificar se há token válido no localStorage
-        this.token = localStorage.getItem('incontrol_token');
-        this.currentUser = JSON.parse(localStorage.getItem('incontrol_user') || 'null');
-
-        if (!this.token || !this.currentUser) {
-            console.log('🔒 Usuário não autenticado - redirecionar para login');
-            this.redirectToLogin();
-            return;
-        }
-
-        // Verificar se token ainda é válido
-        try {
-            const decoded = this.parseJwt(this.token);
-            const currentTime = Date.now() / 1000;
-
-            if (decoded.exp < currentTime) {
-                console.log('📅 Token expirado - redirecionar para login');
-                this.logoutUser();
-                this.redirectToLogin();
-                return;
-            }
-
-            console.log(`✅ Usuário autenticado: ${this.currentUser.username}`);
-            // Se passou por todas as verificações, inicializar o painel
-            this.init();
-
-        } catch (error) {
-            console.log('❌ Token inválido - redirecionar para login');
-            this.logoutUser();
-            this.redirectToLogin();
-        }
-    }
-
-    parseJwt(token) {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        return JSON.parse(atob(base64));
-    }
-
-    redirectToLogin() {
-        if (window.location.pathname !== '/login') {
-            window.location.href = 'login.html';
-        }
-    }
-
-    logoutUser() {
-        // Limpar dados de autenticação
-        localStorage.removeItem('incontrol_token');
-        localStorage.removeItem('incontrol_user');
-        this.token = null;
-        this.currentUser = null;
-    }
-
-    logout() {
-        this.logoutUser();
-        this.showToast('Logout realizado com sucesso!', 'success');
-
-        // Pequeno delay para mostrar a mensagem
-        setTimeout(() => {
-            window.location.href = 'login.html';
-        }, 1000);
     }
 
     init() {
@@ -115,19 +50,19 @@ class PainelAdmin {
             tab.addEventListener('click', (e) => this.switchTab(e.currentTarget.dataset.tab));
         });
 
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        return JSON.parse(atob(base64));
-    }
+        // Botões de controle GETS
+        document.getElementById('startGetsBtn').addEventListener('click', () => this.controlBot('gets', 'start'));
+        document.getElementById('stopGetsBtn').addEventListener('click', () => this.controlBot('gets', 'stop'));
+        document.getElementById('restartGetsBtn').addEventListener('click', () => this.controlBot('gets', 'restart'));
+        document.getElementById('statusGetsBtn').addEventListener('click', () => this.controlBot('gets', 'status'));
 
-    redirectToLogin() {
-        if (window.location.pathname !== '/login') {
-            window.location.href = 'login.html';
-        }
-    }
+        // Botões de controle Telegram
+        document.getElementById('telegramStatsBtn').addEventListener('click', () => this.getTelegramStats());
+        document.getElementById('telegramLogsBtn').addEventListener('click', () => this.getTelegramLogs());
 
-    logoutUser() {
-        // Limpar dados de autenticação
-        localStorage.removeItem('incontrol_token');
+        // Botão refresh geral
+        document.getElementById('refreshBtn').addEventListener('click', () => this.refreshAll());
+
         // Botão configurações
         document.getElementById('settingsBtn').addEventListener('click', () => this.openSettings());
     }

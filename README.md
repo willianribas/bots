@@ -97,235 +97,23 @@ node controle-automatizado.js
 # Seguir instruções no arquivo: TaskScheduler_Instrucoes.txt
 ```
 
-### **🏗️ VPS Contabo (Produção - Completo)**
+### **VPS Contabo (Linux)**
 ```bash
-###############################
-# DEPLOY COMPLETO CONTABO
-###############################
+# Upload dos arquivos via SCP ou SFTP
+scp controle-automatizado.js usuario@vps-contabo:/home/usuario/
 
-### 1. CONFIGURAÇÃO INICIAL VPS ###
-# Conectar via SSH/PuTTY (IP da sua VPS Contabo)
-ssh root@vps-contabo
-
-# Atualizar sistema
-sudo apt update && sudo apt upgrade -y
-sudo apt install curl wget -y
-
-# Instalar Node.js LTS
-curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# Verificar instalação
-node --version  # v20.x.x
-npm --version   # 10.x.x
-
-# Instalar PM2 globalmente
+# Na VPS:
+cd /home/usuario
+npm install
 sudo npm install -g pm2
 
-###############################
-### 2. SUBIDOS DOS ARQUIVOS ###
-###############################
-
-# No seu computador local (PowerShell/CMD):
-# Compactar arquivos
-cd c:\Users\Usuario\Desktop\Projeto\automacao
-tar -czf deploy.tar.gz *
-
-# Ou usando WinSCP/SCP:
-scp deploy.tar.gz root@vps-contabo:/home/
-
-###############################
-### 3. CONFIGURAÇÃO VPS ###
-###############################
-
-# Na VPS (SSH):
-cd /home
-tar -xzf deploy.tar.gz
-cd automacao
-
-# Instalar dependências COMPLETAS
-npm install
-npm install jsonwebtoken bcryptjs @supabase/supabase-js
-
-# Instalar Playwright browsers
-npx playwright install --with-deps
-
-###############################
-### 4. CONFIGURAÇÃO AUTOMAÇÃO GETS ###
-###############################
-
-# Editar credenciais GETS
-nano controle-automatizado.js
-
-# Alterar:
-const SUPABASE_URL = 'https://SEU-PROJETO.supabase.co';
-const SUPABASE_ANON_KEY = 'SUA-CHAVE-ANONIMA-AQUI';
-const LOGIN_EMAIL = 'seu-email@unicamp.br';
-const LOGIN_SENHA = 'SUA-SENHA-GETS-SEGURA';
-
-# Telegram (opcional):
-const TELEGRAM_TOKEN = 'TOKEN-BOT-TELEGRAM';
-const TELEGRAM_CHAT_ID = 'SEU-CHAT-ID';
-
-###############################
-### 5. TESTE DO SISTEMA ###
-###############################
-
-# Teste automação GETS primeiro
-node controle-automatizado.js
-
-# Se funcionar (console mostra updates), Ctrl+C
-
-# Teste painel backend separado
-node painel-backend.js
-
-# Testar painel (outro terminal/WinSCP)
-# Abrir navegador: http://vps-ip:3001
-# Fazer login: admin / admin123
-
-###############################
-### 6. PRODUÇÃO COM PM2 ###
-###############################
-
-# Iniciar com PM2 (produção)
-pm2 start controle-automatizado.js --name="incontrol-automacao"
-pm2 start painel-backend.js --name="incontrol-painel"
-
-# Verificar status
-pm2 status
-pm2 logs
-
-# Configurar auto-start (reinicia na reboot)
+# Iniciar com PM2 para produção
+pm2 start controle-automatizado.js --name="gets-monitor"
 pm2 startup
-# Execute o comando que aparece na tela
-
 pm2 save
 
-###############################
-### 7. FIREWALL E SEGURANÇA ###
-###############################
-
-# Instalar UFW (firewall simples)
-sudo apt install ufw -y
-sudo ufw allow ssh
-sudo ufw allow 3001/tcp  # Porta do painel
-sudo ufw --force enable
-
-# Verificar firewall
-sudo ufw status
-
-###############################
-### 8. INSTALAR APACHE (OPCIONAL) ###
-###############################
-
-# Para produção profissional (porta 80):
-sudo apt install apache2 -y
-
-# Configurar proxy para Node.js
-sudo a2enmod proxy proxy_http
-sudo nano /etc/apache2/sites-available/painel.conf
-
-# Adicionar esse conteúdo:
-<VirtualHost *:80>
-    ServerName SEU-VPS-IP
-
-    ProxyPass / http://localhost:3001/
-    ProxyPassReverse / http://localhost:3001/
-
-    ErrorLog ${APACHE_LOG_DIR}/painel_error.log
-    CustomLog ${APACHE_LOG_DIR}/painel_access.log combined
-</VirtualHost>
-
-# Ativar site
-sudo a2ensite painel.conf
-sudo systemctl reload apache2
-
-# Agora acessar: http://SEU-VPS-IP/
-
-###############################
-### 9. MONITORAMENTO PM2 ###
-###############################
-
-# Comandos importantes PM2:
-pm2 list                   # Ver todas aplicações
-pm2 logs incontrol-automacao  # Logs automação GETS
-pm2 logs incontrol-painel     # Logs painel
-pm2 restart incontrol-automacao  # Restart automação
-pm2 restart incontrol-painel     # Restart painel
-pm2 monit                   # Interface monitoramento
-
-###############################
-### 10. BACKUP AUTOMÁTICO ###
-###############################
-
-# Criar script backup semanal
-sudo nano /usr/local/bin/backup-incontrol.sh
-
-# Conteúdo:
-#!/bin/bash
-DATE=$(date +%Y%m%d)
-BACKUP_DIR="/home/backups"
-mkdir -p $BACKUP_DIR
-
-# Backup arquivos
-cd /home
-tar -czf $BACKUP_DIR/incontrol-full-$DATE.tar.gz automacao/
-
-# Backup banco (via Supabase - jogo fora da VPS)
-echo "Backup criado: $BACKUP_DIR/incontrol-full-$DATE.tar.gz"
-
-# Agendar backup semanal (crontab)
-sudo crontab -e
-# Adicionar: 0 2 * * 1 /usr/local/bin/backup-incontrol.sh
-
-###############################
-### 11. FINALIZAÇÃO ###
-###############################
-
-# Verificar tudo funcionando:
-pm2 status
-htop  # Ver processos
-free -h  # Ver memória
-
-# Acesse:
-http://SEU-VPS-IP/  (se Apache) OU
-http://SEU-VPS-IP:3001/  (se Node direto)
-
-# LOGIN:
-# admin / admin123
-# ⚠️ ALTERAR SENHA IMEDIATAMENTE!
-
-###############################
-### COMANDOS MONITORAMENTO ###
-###############################
-
-# SSH na VPS para monitoramento:
-ssh root@vps-ip
-pm2 status
-pm2 logs incontrol-automacao --lines 10
-tail -f /var/log/apache2/error.log  # Se Apache
-htop  # Ver recursos
-free -h  # Memória
-df -h  # Disco
-
-###############################
-### PARA ATUALIZAR SISTEMA ###
-###############################
-
-# Parar serviços
-pm2 stop all
-
-# Backup antes de atualizar
-cp -r automacao automacao.backup
-
-# Atualizar arquivos (via SCP)
-# ... subir novos arquivos ...
-
-# Instalar novas dependências se necessário
-npm install
-
-# Restart serviços
-pm2 restart all
+# Opcional: Iniciar painel administrativo
+pm2 start painel-backend.js --name="painel-admin" -- -p 80
 ```
 
 ### **Painel Web Administrativo**
@@ -518,5 +306,3 @@ Você agora tem um **sistema de automação profissional** comparável às solu�
 
 **Telegram do Developer:** [@williann_dev](https://t.me/williann_dev)
 **Suporte:** [GitHub Issues](https://github.com/willianndev/incontrol-gets/issues)
-#   b o t s  
- 
